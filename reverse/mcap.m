@@ -22,8 +22,6 @@ for i=1:numAP
     else%如果所有的MC都已经连接，结束。
         break
     end
-    ja(i)=buf/ap.limit;
-    
 end
 payment=0;
 profit=0;
