@@ -1,14 +1,12 @@
 function [] = double1( numTK,numMC,lim)
 %UNTITLED 此处显示有关此函数的摘要
 %   此处显示详细说明
-for i = 1:numTK
-    u(i) = 5*rand(1,1)+20;%10到15之间均匀分布,注意之后要乘以log（）
-    p(i) = 5*rand(1,1);%5到10之间均匀。注意这是写给只有一个区域
-end
+u = 20*rand(numTK,1)+60;%10到15之间均匀分布,注意之后要乘以log（）
+p = 5*rand(numTK,1);
 C1=rand(numTK,numMC);
 C2=2*rand(numTK,numMC);%成本函数的一次项和二次项；
-A=20*rand(1,numTK)+10;
-B=5*rand(numTK,numMC)+5;
+A=20*rand(numTK,1)+10;
+B=4*rand(numTK,numMC)+2;
 s=0;
 for i = 1: numTK
     s=s+abs(A(i)- sum(B(i,:)));

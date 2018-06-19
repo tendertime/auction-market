@@ -20,7 +20,7 @@ Task = @(i,x,p) TK(:,i)'.*p(i,:)*x-u(i)*log(1+([1,1,1,1]*x));
 Work = @(i,k,x,p) C1(:,k)'*(x.*x)+(C2(:,k)-p(:,i))'*x;
 
 %结果初始化
-Times=60;
+Times=20;
 welfare =zeros(Times);
 supply=zeros(Times,4);
 demand=zeros(Times);
