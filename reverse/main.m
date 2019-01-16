@@ -1,54 +1,105 @@
-function [DSIC,BIC,OPT] = main(P,C,zi,numAP) %返回总的收益；
+function [DSIC,BIC,OPT] = main(P,C,file,numAP) %返回总的收益；
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 bandwidth=[6,8,10,15,20];
 store = 90*rand(1,numAP)+10; %存储空间
 bid = 8*rand(1,numAP)+7;%均匀价格
-aim=600;%带宽目标600M时
+aim=600;%带宽目标时
+co=[2,5,12]*pi*37.3*37.3/1000;%cover
+co=ceil(co);
 for i=1:numAP
-    ap(i).b=bandwidth(randi(4));%回程带宽
+    ap(i).b=bandwidth(randi(5));%回程带宽
     ap(i).s=store(i);
-    ap(i).h=zipf(store(i),10000,zi);%缓存命中率,直接从s算。
+    ap(i).h=zipf(store(i),file,0.8);%缓存命中率,直接从s算。
     ap(i).bid=bid(i);
-    sea(i)=ap(i).bid/(P-C*(1-ap(i).h));
     ap(i).limit=ap(i).b/(1-ap(i).h);
+    sea(i)=ap(i).bid-ap(i).limit*(P-C*(1-ap(i).h));
+    %{
+    l=rand(1);
+    if(l<0.8)%大城市概率80
+        ap(i).l=co(3);
+    elseif (l>0.95)%小城市概率5
+        ap(i).l=co(2);
+    else ap(i).l=co(1);%进入中等城市
+    end
+    %}
+    ap(i).l=co(3);
 end
+msd=zeros(numAP,co(3));
+msl=40*ones(numAP,co(3));
+for i=1:numAP
+    mcl=38*rand(1,ap(i).l);%随机分布距离
+    mcd=2.5*rand(1,ap(i).l)+0.5;%随机分布需求；
+    [mcl,rl]=sort(mcl);%距离排序，原有顺序是
+    for j=1:ap(i).l
+        msd(i,j)=mcd(rl(j));
+        msl(i,j)=mcl(j);
+    end
+end
+
 %%{
 %DSIC:
 tic;
 [~,soa]=sort(sea);
+%{
 [payment,profit,y] = mcap(ap,numAP,P,C,aim,soa);
 sum=0;
 for i=1:numAP
-    if y(i)==1
+    if y(soa(i))==1
         fa=ap;
-        fa(i)=[];
+        fa(soa(i))=[];
         sear=sea;
-        sear(i)=[];
+        sear(soa(i))=[];
         [~,seoa]=sort(sear);
-        [pay,pro,~] = mcap( fa,numAP-1,P,C,aim,seoa);
-        p(i)=profit+pay-payment-pro;%给APi的支付；
-        sum=sum+p(i);
+        [pay,pro,~] = mcap(fa,numAP-1,P,C,aim,seoa);
+        p(soa(i))=profit+pay-payment-pro;%给APi的支付；
+        sum=sum+p(soa(i));
     end
 end
+%}
+[payment,profit,y] =mcap(ap,numAP,P,C,aim,soa,msd,msl);
+sum=0;
+for i=1:numAP
+    if y(soa(i))==0
+        break;
+    else
+        fa=ap;
+        fa(soa(i))=[];
+        sear=sea;
+        sear(soa(i))=[];
+        [~,seoa]=sort(sear);
+        mssd=msd;
+        mssd(soa(i),:)=[];
+        mssl=msl;
+        mssl(soa(i),:)=[];
+        [pay,pro,~] = mcap(fa,numAP-1,P,C,aim,seoa,mssd,mssl);
+        p(soa(i))=profit-payment-pro+pay;%给APi的支付；
+        sum=sum+p(soa(i));
+    end
+end
+%}
 t1=toc;
-DSIC=profit-payment-sum;
+DSIC=profit-sum-payment;
 %}
 %%{
 %BIC:
 tic;
 [~,soa]=sort(sea);
-[~,profit,~] = mcap(ap,numAP,P,C,aim,soa);
+[~,profit,~] =mcap(ap,numAP,P,C,aim,soa,msd,msl);
 sum=0;
 for i=1:numAP
     fa=ap;
-    fa(i)=[];
+    fa(soa(i))=[];
     sear=sea;
-    sear(i)=[];
+    sear(soa(i))=[];
     [~,seoa]=sort(sear);
-    [pay,~,~] = mcap(fa,numAP-1,P,C,aim,seoa);
-    sum=sum+pay;
-    p(i)=pay;
+    mssd=msd;
+    mssd(soa(i),:)=[];
+    mssl=msl;
+    mssl(soa(i),:)=[];
+    [pay,pro,~]=mcap(fa,numAP-1,P,C,aim,seoa,mssd,mssl);
+    sum=sum+pay-pro;
+    p(soa(i))=pay-pro;
 end
 for i=1:numAP
     p(i)=p(i)-(sum-p(i))/(numAP-1);
@@ -85,7 +136,7 @@ for i=1:numAP
 end
 [~,soc]=sort(sc);
 
-[payment,profit,y] = mcap(ap,numAP,P,C,aim,soc);
+[payment,profit,y] =mcap(ap,numAP,P,C,aim,soc,msd,msl);
 cp=1;
 for i=1:numAP
     if y(i)==1
