@@ -3,12 +3,12 @@ function [] = pri()
 %   此处显示详细说明
 %main(P,C,F,numAP,numMC,alpha)
 %u=[60,120,150,200];
-for j=1:1000
-    u(j)=4990+j*10;
+for j=1:46
+    u(j)=29+j;
     %算95%置信区间
     display(j);
     for i=1:50
-        [a(i),b(i),c(i)]=main(15,5,u(j),60);
+        [a(i),b(i),c(i)]=main(u(j),5,0.8,60);
     end
     [~,~,f]=ttest(a,mean(a),0.01);
     a(a<f(1)|a>f(2))=[];
@@ -24,7 +24,7 @@ end
 %bar(u,z);
 plot(u,x,'--b',u,y,'-.go',u,z,':rx');
 legend('VCG','AGV','OPT',4);
-%xlabel('Number of AP');
-xlabel('Number of Files');
-ylabel('Social Welfare');
+xlabel('Number of AP');
+%xlabel('Profit per Mb/s');
+ylabel('Time Consumption');
 end

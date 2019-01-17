@@ -1,4 +1,4 @@
-function [DSIC,BIC,OPT] = main(P,C,file,numAP) %返回总的收益；
+function [t1,t2,t3] = main(P,C,zi,numAP) %返回总的收益；
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 bandwidth=[6,8,10,15,20];
@@ -7,23 +7,37 @@ bid = 8*rand(1,numAP)+7;%均匀价格
 aim=600;%带宽目标时
 co=[2,5,12]*pi*37.3*37.3/1000;%cover
 co=ceil(co);
+%{
+if emm==1
+    x1=1;
+elseif emm==2
+    x1=0.8;
+    x2=0.95;
+elseif emm==3
+    x1=0.6;
+    x2=0.9;
+else
+    x1=0;
+    x2=1;
+end
+%}
 for i=1:numAP
     ap(i).b=bandwidth(randi(5));%回程带宽
     ap(i).s=store(i);
-    ap(i).h=zipf(store(i),file,0.8);%缓存命中率,直接从s算。
+    ap(i).h=zipf(store(i),10000,zi);%缓存命中率,直接从s算。
     ap(i).bid=bid(i);
     ap(i).limit=ap(i).b/(1-ap(i).h);
     sea(i)=ap(i).bid-ap(i).limit*(P-C*(1-ap(i).h));
+    ap(i).l=co(3);
     %{
     l=rand(1);
-    if(l<0.8)%大城市概率80
-        ap(i).l=co(3);
-    elseif (l>0.95)%小城市概率5
-        ap(i).l=co(2);
-    else ap(i).l=co(1);%进入中等城市
+    if(l<x1)%大城市概率80
+        
+    elseif (l>x2)%小城市概率5 
+        ap(i).l=co(1);
+    else ap(i).l=co(2);%进入中等城市
     end
     %}
-    ap(i).l=co(3);
 end
 msd=zeros(numAP,co(3));
 msl=40*ones(numAP,co(3));
@@ -174,7 +188,6 @@ sum=0;
 for i=1:cp
     sum=sum+0.5*va(i).lc*va(i).lc-0.5*va(i).c*va(i).c+va(i).c*va(i).mc-va(i).lc*va(i).mc;% large,
 end
-
 t3=toc;
 OPT=profit-payment-sum;
 end
